@@ -52,6 +52,7 @@ class NodeState:
         port: int,
         public_url: str,
         data_dir: str,
+        wallet_dir: str,
         wallet: Wallet,
         blockchain: Blockchain,
         data_file_path: str,
@@ -59,6 +60,7 @@ class NodeState:
         self.port: int = port
         self.public_url: str = public_url
         self.data_dir: str = data_dir
+        self.wallet_dir: str = wallet_dir
         self.wallet: Wallet = wallet
         self.blockchain: Blockchain = blockchain
         self.data_file_path: str = data_file_path
@@ -144,6 +146,7 @@ def create_app(
     port: int = DEFAULT_PORT,
     public_url: str | None = None,
     data_dir: str = DATA_DIR,
+    wallet_dir: str = "wallets",
     start_background: bool = True,
 ) -> Flask:
     """
@@ -154,7 +157,6 @@ def create_app(
     normalized_public_url = normalize_url(public_url or f"http://127.0.0.1:{port}")
 
     # Load or generate the node's wallet
-    wallet_dir = "wallets"
     os.makedirs(wallet_dir, exist_ok=True)
     wallet_path = os.path.join(wallet_dir, f"node_{port}.json")
     if os.path.exists(wallet_path):
@@ -190,12 +192,23 @@ def create_app(
         port=port,
         public_url=normalized_public_url,
         data_dir=data_dir,
+        wallet_dir=wallet_dir,
         wallet=wallet,
         blockchain=blockchain,
         data_file_path=data_file_path,
     )
     app.node_state = node_state  # type: ignore
     app.config["NODE_STATE"] = node_state
+
+    # Permissive CORS hook for the demo dashboard
+    @app.after_request
+    def add_cors_headers(response):
+        # NOTE: Permissive CORS header is strictly for the educational demo dashboard
+        # and local testing; this is not suitable for production deployments.
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
+        response.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
+        return response
 
     # Start periodic consensus polling if requested
     if start_background:
@@ -356,6 +369,10 @@ def create_app(
         except Exception as e:
             return jsonify({"ok": False, "message": f"Malformed block: {e}"}), 400
 
+        # Cryptographic integrity check: stored hash must match computed hash
+        if block.hash != block.compute_hash():
+            return jsonify({"ok": False, "message": "Block hash does not match computed hash"}), 400
+
         peers_to_notify: list[str] = []
         broadcast_block: dict[str, Any] | None = None
         needs_resolve: bool = False
@@ -463,6 +480,17 @@ def create_app(
             length = len(node_state.blockchain.chain)
         return jsonify({"replaced": replaced, "length": length}), 200
 
+    @app.route("/dashboard", methods=["GET"])
+    def get_dashboard():
+        """Serve the single-page HTML/JS monitoring dashboard."""
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        dashboard_path = os.path.join(base_dir, "ui", "dashboard.html")
+        if not os.path.exists(dashboard_path):
+            return jsonify({"ok": False, "message": "Dashboard UI file not found"}), 404
+        with open(dashboard_path, "r", encoding="utf-8") as f:
+            html_content = f.read()
+        return app.response_class(html_content, mimetype="text/html")
+
     return app
 
 
@@ -471,6 +499,8 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int, default=DEFAULT_PORT, help="Port to run node on")
     parser.add_argument("--host", type=str, default="0.0.0.0", help="Host interface to bind")
     parser.add_argument("--public-url", type=str, default=None, help="Public URL of this node")
+    parser.add_argument("--data-dir", type=str, default=DATA_DIR, help="Directory to store blockchain data")
+    parser.add_argument("--wallet-dir", type=str, default="wallets", help="Directory to store wallet files")
     parser.add_argument("--peers", nargs="*", default=[], help="Initial peer URLs to register with")
     args = parser.parse_args()
 
@@ -480,6 +510,8 @@ if __name__ == "__main__":
     app_instance = create_app(
         port=node_port,
         public_url=node_public_url,
+        data_dir=args.data_dir,
+        wallet_dir=args.wallet_dir,
         start_background=True,
     )
     state = app_instance.node_state  # type: ignore

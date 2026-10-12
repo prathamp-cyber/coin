@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyCoin Node Dashboard</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-hover: #0ea5e9;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      padding: 24px;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .connection-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    input[type="text"], input[type="number"] {
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--primary);
+    }
+
+    button {
+      background: var(--primary);
+      color: #0f172a;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background 0.15s ease;
+    }
+
+    button:hover {
+      background: var(--primary-hover);
+    }
+
+    button.btn-secondary {
+      background: #334155;
+      color: var(--text);
+    }
+
+    button.btn-secondary:hover {
+      background: #475569;
+    }
+
+    /* Status Banner */
+    .status-banner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 16px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      font-size: 0.88rem;
+    }
+
+    .status-banner.online {
+      background: rgba(34, 197, 94, 0.15);
+      border: 1px solid rgba(34, 197, 94, 0.4);
+      color: #86efac;
+    }
+
+    .status-banner.offline {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.5);
+      color: #fca5a5;
+    }
+
+    /* Action Toolbar */
+    .action-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    /* Notification Box */
+    .notification-box {
+      display: none;
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin-bottom: 24px;
+      font-size: 0.9rem;
+    }
+    .notification-box.active {
+      display: block;
+    }
+    .notification-box.info {
+      background: #1e293b;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+    }
+    .notification-box.success {
+      background: rgba(34, 197, 94, 0.15);
+      border: 1px solid var(--success);
+      color: #86efac;
+    }
+    .notification-box.error {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid var(--danger);
+      color: #fca5a5;
+    }
+
+    /* Grid Layout */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 18px;
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+    }
+
+    .stat-item {
+      background: #0f172a;
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* Lists */
+    .list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 240px;
+      overflow-y: auto;
+    }
+
+    .list-item {
+      background: #0f172a;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      word-break: break-all;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      font-size: 0.88rem;
+      padding: 8px 0;
+    }
+
+    /* Blocks */
+    .blocks-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .block-card {
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      padding: 14px;
+      cursor: pointer;
+      transition: border-color 0.15s ease;
+    }
+
+    .block-card:hover {
+      border-color: var(--primary);
+    }
+
+    .block-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 0.88rem;
+    }
+
+    .block-index {
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .block-hash {
+      font-family: monospace;
+      color: #94a3b8;
+    }
+
+    .block-meta {
+      display: flex;
+      gap: 16px;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      margin-top: 6px;
+    }
+
+    .block-txs-details {
+      display: none;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px dashed var(--card-border);
+      font-size: 0.82rem;
+    }
+
+    .block-txs-details.open {
+      display: block;
+    }
+
+    .tx-item {
+      background: #1e293b;
+      padding: 8px;
+      border-radius: 4px;
+      margin-bottom: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .tx-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      margin-left: 6px;
+    }
+
+    .copy-btn:hover {
+      color: var(--text);
+      border-color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <h1>
+        <span>&#x26CF;</span>
+        <span>MyCoin Node Dashboard</span>
+      </h1>
+      <div class="connection-bar">
+        <input type="text" id="node-url-input" placeholder="http://127.0.0.1:5000" style="width: 250px;">
+        <button id="btn-connect">Connect</button>
+      </div>
+    </header>
+
+    <!-- Connection Status -->
+    <div id="status-banner" class="status-banner online">
+      <span id="status-text">Connecting to node...</span>
+      <span id="last-updated-text">Last updated: --</span>
+    </div>
+
+    <!-- Notification / Action Results -->
+    <div id="notification-box" class="notification-box"></div>
+
+    <!-- Action Toolbar -->
+    <div class="action-toolbar">
+      <button id="btn-mine">Mine Block</button>
+      <button id="btn-sync" class="btn-secondary">Sync with Peers</button>
+      <button id="btn-new-wallet" class="btn-secondary">New Wallet</button>
+    </div>
+
+    <!-- Overview Stats Card -->
+    <div class="card" style="margin-bottom: 24px;">
+      <div class="card-title">Node Overview</div>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-label">Coin / Symbol</div>
+          <div class="stat-value" id="stat-coin">--</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Chain Length</div>
+          <div class="stat-value" id="stat-length">--</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Pending Txs</div>
+          <div class="stat-value" id="stat-pending">--</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Peers</div>
+          <div class="stat-value" id="stat-peers">--</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">PoW Difficulty</div>
+          <div class="stat-value" id="stat-difficulty">--</div>
+        </div>
+      </div>
+      <div style="margin-top: 14px; font-size: 0.88rem; display: flex; align-items: center; gap: 8px;">
+        <span style="color: var(--text-muted);">Miner / Node Address:</span>
+        <span id="stat-address" style="font-family: monospace; color: var(--primary);">--</span>
+        <button id="btn-copy-address" class="copy-btn">Copy</button>
+      </div>
+    </div>
+
+    <!-- Two-Column Grid: Peers, Balance Lookup & Pending -->
+    <div class="grid">
+      <!-- Balance Lookup Card -->
+      <div class="card">
+        <div class="card-title">Balance Lookup</div>
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+          <input type="text" id="balance-address-input" placeholder="Enter address hex" style="flex: 1;">
+          <button id="btn-check-balance">Check</button>
+        </div>
+        <div id="balance-result-box" style="font-size: 0.95rem; font-weight: 600; color: var(--success); min-height: 24px;"></div>
+      </div>
+
+      <!-- Connected Peers Card -->
+      <div class="card">
+        <div class="card-title">
+          <span>Connected Peers</span>
+          <span id="peers-badge" style="font-size: 0.8rem; color: var(--text-muted);">(0)</span>
+        </div>
+        <ul id="peers-list" class="list">
+          <li class="empty-state">No peers connected</li>
+        </ul>
+      </div>
+
+      <!-- Pending Transactions Card -->
+      <div class="card">
+        <div class="card-title">
+          <span>Mempool Pending</span>
+          <span id="pending-badge" style="font-size: 0.8rem; color: var(--text-muted);">(0)</span>
+        </div>
+        <ul id="pending-list" class="list">
+          <li class="empty-state">No pending transactions</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Blocks List Card -->
+    <div class="card">
+      <div class="card-title">
+        <span>Blockchain Blocks (Newest First)</span>
+        <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-muted);">Click block to expand transactions</span>
+      </div>
+      <div id="blocks-container" class="blocks-container">
+        <div class="empty-state">Loading blocks...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State
+    let baseUrl = window.location.origin;
+    if (!baseUrl || baseUrl === "null") {
+      baseUrl = "http://127.0.0.1:5000";
+    }
+
+    const nodeUrlInput = document.getElementById("node-url-input");
+    nodeUrlInput.value = baseUrl;
+
+    let fullNodeAddress = "";
+
+    function shorten(str, startChars = 8, endChars = 8) {
+      if (!str || str.length <= startChars + endChars) return str || "";
+      return str.slice(0, startChars) + "..." + str.slice(-endChars);
+    }
+
+    function showNotification(type, message) {
+      const box = document.getElementById("notification-box");
+      box.className = "notification-box active " + type;
+      box.textContent = message;
+    }
+
+    function clearNotification() {
+      const box = document.getElementById("notification-box");
+      box.className = "notification-box";
+      box.textContent = "";
+    }
+
+    // Copy to clipboard
+    document.getElementById("btn-copy-address").addEventListener("click", () => {
+      if (fullNodeAddress) {
+        navigator.clipboard.writeText(fullNodeAddress).then(() => {
+          showNotification("success", "Node address copied to clipboard!");
+          setTimeout(clearNotification, 3000);
+        });
+      }
+    });
+
+    // Update connection URL
+    document.getElementById("btn-connect").addEventListener("click", () => {
+      let inputVal = nodeUrlInput.value.trim().replace(/\/+$/, "");
+      if (inputVal) {
+        if (!inputVal.startsWith("http://") && !inputVal.startsWith("https://")) {
+          inputVal = "http://" + inputVal;
+        }
+        baseUrl = inputVal;
+        nodeUrlInput.value = baseUrl;
+        fetchData();
+      }
+    });
+
+    // Fetch and update dashboard data
+    async function fetchData() {
+      const statusBanner = document.getElementById("status-banner");
+      const statusText = document.getElementById("status-text");
+      const lastUpdatedText = document.getElementById("last-updated-text");
+
+      try {
+        // Fetch node info
+        const infoRes = await fetch(baseUrl + "/", { cache: "no-store" });
+        if (!infoRes.ok) throw new Error("Status " + infoRes.status);
+        const info = await infoRes.json();
+
+        // Update Overview Card
+        document.getElementById("stat-coin").textContent = (info.coin_name || "MyCoin") + " (" + (info.symbol || "MYC") + ")";
+        document.getElementById("stat-length").textContent = String(info.chain_length);
+        document.getElementById("stat-pending").textContent = String(info.pending_count);
+        document.getElementById("stat-peers").textContent = String(info.peer_count);
+        document.getElementById("stat-difficulty").textContent = String(info.difficulty);
+
+        fullNodeAddress = info.address || "";
+        document.getElementById("stat-address").textContent = shorten(fullNodeAddress, 10, 10);
+
+        // Fetch Peers
+        const peersRes = await fetch(baseUrl + "/nodes", { cache: "no-store" });
+        if (peersRes.ok) {
+          const peers = await peersRes.json();
+          renderPeers(peers);
+        }
+
+        // Fetch Pending Transactions
+        const pendingRes = await fetch(baseUrl + "/pending", { cache: "no-store" });
+        if (pendingRes.ok) {
+          const pending = await pendingRes.json();
+          renderPending(pending);
+        }
+
+        // Fetch Chain
+        const chainRes = await fetch(baseUrl + "/chain", { cache: "no-store" });
+        if (chainRes.ok) {
+          const chainData = await chainRes.json();
+          renderBlocks(chainData.chain || []);
+        }
+
+        // Status update
+        statusBanner.className = "status-banner online";
+        statusText.textContent = "Connected to " + baseUrl;
+        const now = new Date();
+        lastUpdatedText.textContent = "Last updated: " + now.toLocaleTimeString();
+      } catch (err) {
+        statusBanner.className = "status-banner offline";
+        statusText.textContent = "Node unreachable: " + baseUrl + " (" + err.message + ")";
+      }
+    }
+
+    function renderPeers(peers) {
+      const peersList = document.getElementById("peers-list");
+      const peersBadge = document.getElementById("peers-badge");
+      peersBadge.textContent = "(" + peers.length + ")";
+
+      while (peersList.firstChild) {
+        peersList.removeChild(peersList.firstChild);
+      }
+
+      if (!peers || peers.length === 0) {
+        const li = document.createElement("li");
+        li.className = "empty-state";
+        li.textContent = "No peers connected";
+        peersList.appendChild(li);
+        return;
+      }
+
+      peers.forEach(peerUrl => {
+        const li = document.createElement("li");
+        li.className = "list-item";
+        li.textContent = peerUrl;
+        peersList.appendChild(li);
+      });
+    }
+
+    function renderPending(pending) {
+      const pendingList = document.getElementById("pending-list");
+      const pendingBadge = document.getElementById("pending-badge");
+      pendingBadge.textContent = "(" + pending.length + ")";
+
+      while (pendingList.firstChild) {
+        pendingList.removeChild(pendingList.firstChild);
+      }
+
+      if (!pending || pending.length === 0) {
+        const li = document.createElement("li");
+        li.className = "empty-state";
+        li.textContent = "No pending transactions in mempool";
+        pendingList.appendChild(li);
+        return;
+      }
+
+      pending.forEach(tx => {
+        const li = document.createElement("li");
+        li.className = "list-item";
+
+        const text = shorten(tx.sender, 6, 6) + " -> " + shorten(tx.receiver, 6, 6) +
+          " | " + tx.amount + " MYC" + (tx.data ? " (" + tx.data + ")" : "");
+        li.textContent = text;
+        pendingList.appendChild(li);
+      });
+    }
+
+    function renderBlocks(blocks) {
+      const container = document.getElementById("blocks-container");
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
+
+      if (!blocks || blocks.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "empty-state";
+        empty.textContent = "No blocks found";
+        container.appendChild(empty);
+        return;
+      }
+
+      // Newest first
+      const reversed = [...blocks].reverse();
+
+      reversed.forEach(block => {
+        const card = document.createElement("div");
+        card.className = "block-card";
+
+        const header = document.createElement("div");
+        header.className = "block-header";
+
+        const idx = document.createElement("span");
+        idx.className = "block-index";
+        idx.textContent = "Block #" + block.index;
+
+        const hash = document.createElement("span");
+        hash.className = "block-hash";
+        hash.textContent = "Hash: " + shorten(block.hash, 8, 8);
+
+        header.appendChild(idx);
+        header.appendChild(hash);
+
+        const meta = document.createElement("div");
+        meta.className = "block-meta";
+
+        const prev = document.createElement("span");
+        prev.textContent = "Prev: " + shorten(block.previous_hash, 6, 6);
+
+        const nonce = document.createElement("span");
+        nonce.textContent = "Nonce: " + block.nonce;
+
+        const txCount = document.createElement("span");
+        const count = (block.transactions && block.transactions.length) || 0;
+        txCount.textContent = count + " tx" + (count === 1 ? "" : "s");
+
+        const timeSpan = document.createElement("span");
+        const date = new Date(block.timestamp * 1000);
+        timeSpan.textContent = date.toLocaleTimeString();
+
+        meta.appendChild(prev);
+        meta.appendChild(nonce);
+        meta.appendChild(txCount);
+        meta.appendChild(timeSpan);
+
+        card.appendChild(header);
+        card.appendChild(meta);
+
+        // Expandable transactions list
+        const txsDetails = document.createElement("div");
+        txsDetails.className = "block-txs-details";
+
+        if (block.transactions && block.transactions.length > 0) {
+          block.transactions.forEach((tx, i) => {
+            const txItem = document.createElement("div");
+            txItem.className = "tx-item";
+            const isReward = tx.sender === "SYSTEM";
+            const txLabel = isReward ? "[Mining Reward] " : ("Tx #" + i + ": ");
+            const desc = txLabel + shorten(tx.sender, 6, 6) + " -> " + shorten(tx.receiver, 6, 6) +
+              " | Amount: " + tx.amount + " MYC" + (tx.data ? " | Data: " + tx.data : "");
+            txItem.textContent = desc;
+            txsDetails.appendChild(txItem);
+          });
+        } else {
+          const noTx = document.createElement("div");
+          noTx.className = "empty-state";
+          noTx.textContent = "Genesis block (no transactions)";
+          txsDetails.appendChild(noTx);
+        }
+
+        card.appendChild(txsDetails);
+
+        card.addEventListener("click", () => {
+          txsDetails.classList.toggle("open");
+        });
+
+        container.appendChild(card);
+      });
+    }
+
+    // Action: Mine Block
+    document.getElementById("btn-mine").addEventListener("click", async () => {
+      try {
+        const res = await fetch(baseUrl + "/mine");
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          showNotification("success", "Successfully mined Block #" + data.block.index + "! Hash: " + shorten(data.block.hash, 8, 8));
+          fetchData();
+        } else {
+          showNotification("error", "Mining failed: " + (data.message || "Unknown error"));
+        }
+      } catch (err) {
+        showNotification("error", "Network error while mining: " + err.message);
+      }
+    });
+
+    // Action: Sync with Peers
+    document.getElementById("btn-sync").addEventListener("click", async () => {
+      try {
+        const res = await fetch(baseUrl + "/nodes/resolve");
+        const data = await res.json();
+        if (res.ok) {
+          if (data.replaced) {
+            showNotification("success", "Consensus sync: chain replaced with longer chain (Length: " + data.length + ")!");
+          } else {
+            showNotification("info", "Consensus sync complete: current chain is already authoritative (Length: " + data.length + ").");
+          }
+          fetchData();
+        } else {
+          showNotification("error", "Sync error: " + (data.message || "Unknown error"));
+        }
+      } catch (err) {
+        showNotification("error", "Network error during sync: " + err.message);
+      }
+    });
+
+    // Action: New Wallet
+    document.getElementById("btn-new-wallet").addEventListener("click", async () => {
+      try {
+        const res = await fetch(baseUrl + "/wallet/new");
+        const data = await res.json();
+        if (res.ok) {
+          showNotification("info", "New Wallet Generated!\nAddress: " + data.address + "\nPrivate Key: " + data.private_key + "\n[WARNING: " + data.warning + "]");
+        } else {
+          showNotification("error", "Failed to generate wallet: " + (data.message || "Unknown error"));
+        }
+      } catch (err) {
+        showNotification("error", "Network error: " + err.message);
+      }
+    });
+
+    // Balance check
+    document.getElementById("btn-check-balance").addEventListener("click", async () => {
+      const input = document.getElementById("balance-address-input");
+      const box = document.getElementById("balance-result-box");
+      const addr = input.value.trim();
+      if (!addr) {
+        box.textContent = "Please enter an address.";
+        box.style.color = "var(--warning)";
+        return;
+      }
+      try {
+        const res = await fetch(baseUrl + "/balance/" + addr);
+        const data = await res.json();
+        if (res.ok) {
+          box.textContent = "Confirmed Balance: " + data.balance + " MYC";
+          box.style.color = "var(--success)";
+        } else {
+          box.textContent = "Error: " + (data.message || "Could not fetch balance");
+          box.style.color = "var(--danger)";
+        }
+      } catch (err) {
+        box.textContent = "Network error: " + err.message;
+        box.style.color = "var(--danger)";
+      }
+    });
+
+    // Initial fetch and auto-refresh every 3s
+    fetchData();
+    setInterval(fetchData, 3000);
+  </script>
+</body>
+</html>

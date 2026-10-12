@@ -446,3 +446,12 @@ def test_persistence_roundtrip(tmp_path):
     assert chain_resp.status_code == 200
     assert chain_resp.get_json()["length"] == 3
     assert len(app2.node_state.blockchain.chain) == 3
+
+
+def test_dashboard_endpoint(app_and_client):
+    """Verify that GET /dashboard serves the dashboard HTML file."""
+    _, client = app_and_client
+    resp = client.get("/dashboard")
+    assert resp.status_code == 200
+    assert "text/html" in resp.content_type
+    assert "MyCoin Node Dashboard" in resp.data.decode("utf-8")
