@@ -7,7 +7,7 @@ COIN_NAME: str = "MyCoin"
 SYMBOL: str = "MYC"
 
 # Proof of Work difficulty: number of leading zeros required in a valid block hash
-DIFFICULTY: int = 3
+DIFFICULTY: int = 5
 
 # Reward granted to miners per mined block
 MINING_REWARD: int = 50
