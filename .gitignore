@@ -1,0 +1,17 @@
+# Private keys and wallet storage
+wallets/
+*.pem
+
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+
+# Pytest cache
+.pytest_cache/
+
+# Virtual environments
+venv/
+.venv/
+
+# Node chain storage
+data/
